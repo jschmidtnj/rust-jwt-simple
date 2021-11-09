@@ -4,33 +4,32 @@ pub mod unix_timestamp {
         Deserializer, Serializer,
     };
 
-    use coarsetime::UnixTimeStamp;
     use std::fmt;
 
     struct TimestampVisitor;
 
     impl<'de> Visitor<'de> for TimestampVisitor {
-        type Value = UnixTimeStamp;
+        type Value = usize;
 
         fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
         where
             E: DeError,
         {
-            Ok(UnixTimeStamp::from_secs(value as _))
+            Ok(value as _)
         }
 
         fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
         where
             E: DeError,
         {
-            Ok(UnixTimeStamp::from_secs(value))
+            Ok(value as usize)
         }
 
         fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
         where
             E: DeError,
         {
-            Ok(UnixTimeStamp::from_secs(value as _))
+            Ok(value as _)
         }
 
         fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -39,15 +38,15 @@ pub mod unix_timestamp {
     }
 
     pub fn serialize<S: Serializer>(
-        time: &Option<UnixTimeStamp>,
+        time: &Option<usize>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_u64(time.unwrap().as_secs())
+        serializer.serialize_u64(time.unwrap() as u64)
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(
         deserializer: D,
-    ) -> Result<Option<UnixTimeStamp>, D::Error> {
+    ) -> Result<Option<usize>, D::Error> {
         deserializer.deserialize_i64(TimestampVisitor).map(Some)
     }
 }

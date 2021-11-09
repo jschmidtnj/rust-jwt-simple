@@ -276,7 +276,7 @@ mod serde_additions;
 
 pub mod reexports {
     pub use anyhow;
-    pub use coarsetime;
+    pub use instant;
     pub use ct_codecs;
     pub use rand;
     pub use serde;
@@ -293,7 +293,7 @@ pub mod prelude {
     pub use crate::claims::*;
     pub use crate::common::*;
     pub use crate::token::*;
-    pub use coarsetime::{self, Clock, Duration, UnixTimeStamp};
+    pub use instant::{Duration};
     pub use ct_codecs::{
         Base64, Base64NoPadding, Base64UrlSafe, Base64UrlSafeNoPadding, Decoder as _, Encoder as _,
     };
@@ -449,7 +449,7 @@ a3t0cyDKinOY7JGIwh8DWAa4pfEzgg56yLcilYSSohXeaQV0nR8+rm9J8GUYXjPK
     #[test]
     fn require_nonce() {
         let key = HS256Key::generate();
-        let mut claims = Claims::create(Duration::from_hours(1));
+        let mut claims = Claims::create(Duration::from_secs(3600));
         let nonce = claims.create_nonce();
         let token = key.authenticate(claims).unwrap();
 

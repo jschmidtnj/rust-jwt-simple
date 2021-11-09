@@ -1,4 +1,5 @@
-use coarsetime::{Clock, Duration, UnixTimeStamp};
+use chrono::{Utc};
+use std::time::{Duration};
 use ct_codecs::{Base64UrlSafeNoPadding, Encoder};
 use rand::RngCore;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -109,7 +110,7 @@ pub struct JWTClaims<CustomClaims> {
         skip_serializing_if = "Option::is_none",
         with = "self::serde_additions::unix_timestamp"
     )]
-    pub issued_at: Option<UnixTimeStamp>,
+    pub issued_at: Option<usize>,
 
     /// Time the claims expire at
     #[serde(
@@ -118,7 +119,7 @@ pub struct JWTClaims<CustomClaims> {
         skip_serializing_if = "Option::is_none",
         with = "self::serde_additions::unix_timestamp"
     )]
-    pub expires_at: Option<UnixTimeStamp>,
+    pub expires_at: Option<usize>,
 
     /// Time the claims will be invalid until
     #[serde(
@@ -127,7 +128,7 @@ pub struct JWTClaims<CustomClaims> {
         skip_serializing_if = "Option::is_none",
         with = "self::serde_additions::unix_timestamp"
     )]
-    pub invalid_before: Option<UnixTimeStamp>,
+    pub invalid_before: Option<usize>,
 
     /// Issuer - This can be set to anything application-specific
     #[serde(rename = "iss", default, skip_serializing_if = "Option::is_none")]
@@ -167,7 +168,7 @@ pub struct JWTClaims<CustomClaims> {
 
 impl<CustomClaims> JWTClaims<CustomClaims> {
     pub(crate) fn validate(&self, options: &VerificationOptions) -> Result<(), Error> {
-        let now = Clock::now_since_epoch();
+        let now = Utc::now().timestamp() as usize;
         let time_tolerance = options
             .time_tolerance
             .unwrap_or_else(|| Duration::from_secs(DEFAULT_TIME_TOLERANCE_SECS));
@@ -176,10 +177,10 @@ impl<CustomClaims> JWTClaims<CustomClaims> {
             ensure!(now <= reject_before, JWTError::OldTokenReused);
         }
         if let Some(time_issued) = self.issued_at {
-            ensure!(time_issued <= now + time_tolerance, JWTError::ClockDrift);
+            ensure!(time_issued <= now + time_tolerance.as_secs() as usize, JWTError::ClockDrift);
             if let Some(max_validity) = options.max_validity {
                 ensure!(
-                    now <= time_issued || now - time_issued <= max_validity,
+                    now <= time_issued || now - time_issued <= max_validity.as_secs() as usize,
                     JWTError::TokenIsTooOld
                 );
             }
@@ -191,7 +192,7 @@ impl<CustomClaims> JWTClaims<CustomClaims> {
         }
         if let Some(expires_at) = self.expires_at {
             ensure!(
-                now - time_tolerance <= expires_at,
+                now - time_tolerance.as_secs() as usize <= expires_at,
                 JWTError::TokenHasExpired
             );
         }
@@ -236,7 +237,7 @@ impl<CustomClaims> JWTClaims<CustomClaims> {
     }
 
     /// Set the token as not being valid until `unix_timestamp`
-    pub fn invalid_before(mut self, unix_timestamp: UnixTimeStamp) -> Self {
+    pub fn invalid_before(mut self, unix_timestamp: usize) -> Self {
         self.invalid_before = Some(unix_timestamp);
         self
     }
@@ -295,10 +296,10 @@ pub struct Claims;
 impl Claims {
     /// Create a new set of claims, without custom data, expiring in `valid_for`.
     pub fn create(valid_for: Duration) -> JWTClaims<NoCustomClaims> {
-        let now = Some(Clock::now_since_epoch());
+        let now = Some(Utc::now().timestamp() as usize);
         JWTClaims {
             issued_at: now,
-            expires_at: Some(now.unwrap() + valid_for),
+            expires_at: Some(now.unwrap() + valid_for.as_secs() as usize),
             invalid_before: now,
             audiences: None,
             issuer: None,
@@ -314,10 +315,10 @@ impl Claims {
         custom_claims: CustomClaims,
         valid_for: Duration,
     ) -> JWTClaims<CustomClaims> {
-        let now = Some(Clock::now_since_epoch());
+        let now = Some(Utc::now().timestamp() as usize);
         JWTClaims {
             issued_at: now,
-            expires_at: Some(now.unwrap() + valid_for),
+            expires_at: Some(now.unwrap() + valid_for.as_secs() as usize),
             invalid_before: now,
             audiences: None,
             issuer: None,

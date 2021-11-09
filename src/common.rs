@@ -1,4 +1,4 @@
-use coarsetime::{Duration, UnixTimeStamp};
+use instant::{Duration};
 use ct_codecs::{Base64UrlSafeNoPadding, Decoder, Encoder, Hex};
 use std::collections::HashSet;
 
@@ -12,7 +12,7 @@ pub struct VerificationOptions {
     ///
     /// For a given user, the time of the last successful authentication can be kept in a database,
     /// and `reject_before` can then be used to reject older (replayed) tokens.
-    pub reject_before: Option<UnixTimeStamp>,
+    pub reject_before: Option<usize>,
 
     /// Accept tokens created with a date in the future
     pub accept_future: bool,
